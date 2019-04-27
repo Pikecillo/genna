@@ -55,7 +55,7 @@ def parse(argv):
 
     profile = ArgumentsProfile()
 
-    # Se obtienen las opciones
+    # Get options
     for option, value in opts:
         if option in ('-h', '--help'):
             help()
@@ -87,7 +87,7 @@ def parse(argv):
         if option in ('-o', '--output-directory'):
             profile.output_directory = value
 
-    # Se chequea que se especifico un archivo de entrada
+    # Make sure an input file was specified
     if not args:
         print 'genna: input file not specified'
         usage()
@@ -102,7 +102,7 @@ def parse(argv):
 
     profile.input_filename = args[0]
 
-    # Se chequea existencia de paths
+    # Check paths exist
     if not os.access(profile.input_filename, os.F_OK):
         print 'genna: input file not found: \'%s\'' % \
               profile.input_filename
@@ -113,7 +113,7 @@ def parse(argv):
               profile.output_directory
         sys.exit(2)
 
-    # Se chequean los permisos de lectura y escritura para directorios
+    # Check read/write permissions for directories
     if not os.access(profile.output_directory, os.R_OK):
         print 'genna: permission denied for reading: \'%s\'' % \
               profile.input_filename
@@ -124,7 +124,7 @@ def parse(argv):
               profile.output_directory
         sys.exit(2)
 
-    # Se chequea que el archivo de entrada sea un archivo regular
+    # Check input file is a regular file
     if not os.path.isfile(profile.input_filename):
         print 'genna: input file is not a regular file: %s' % \
               profile.input_filename

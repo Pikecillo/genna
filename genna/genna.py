@@ -49,8 +49,8 @@ _smbaseDir = {'cplusplus': os.path.join(settings.SMBASE_DIR,
                                    'smbaseJava', '__smbase')
 }
 
-# Claves [Nombre de lenguaje][tipo de classifier]
-# Valores lista de tuplas (nombre_template, formato_nombre_archivo)
+# Keys [Language name][classifier type]
+# Values in tuple list (template name, filename format)
 _languageProfile = {'cplusplus':
                     {'class': [('class_def.cpp.tmpl', '%s.h'),
                                ('class_impl.cpp.tmpl', '%s.cpp')],
@@ -62,14 +62,16 @@ _languageProfile = {'cplusplus':
                     }
 }
 
-# Los parametros son el paquete con los classifiers a generar,
-# el directorio donde se deben guardar los archivos con el
-# codigo fuente y el lenguaje objetivo de la generacion
+# The parameters are:
+# -containerPackage: the package with the classifier to be generated
+# -directory: output directory. This is were the files with the
+# generated code will be written to.
+# -language: target language for the code generation.
 def generate(containerPackage, directory, language):
 
     packDirectory = os.path.join(directory, containerPackage['name'])
 
-    # Se crea directorio para paquete
+    # Create the package dir
     if not os.path.isdir(packDirectory):
         try:
             os.makedirs(packDirectory)
@@ -81,22 +83,20 @@ def generate(containerPackage, directory, language):
     templateDir = _templatesDir[language]
     generationProfiles = []
 
-    # Por cada classifier en este paquete
+    # For each classifier within the package
     for item in ['class', 'interface']:
         for classifier in containerPackage[item]:
             search = [{'class': classifier}, util, settings]
 
-            # Se crean los perfiles de generacion.
-            # Estos son tuplas con la lista de nombres, el nombre
-            # del template y el nombre del archivo de codigo fuente
-            # a crear, en este orden
+	    # Create the generation profiles. These are tuples with the names list,
+	    # the template name, and the name of the source code file, respectively.
             for profile in _languageProfile[language][item]:
                 template = os.path.join(templateDir, profile[0])
                 filename = os.path.join(packDirectory,
                                         profile[1] % classifier['name'])
                 generationProfiles.append((search, template, filename))
 
-    # Por cada perfil creado
+    # For each created profile
     for profile in generationProfiles:
 
         if settings.VERBOSE:
@@ -110,38 +110,36 @@ def generate(containerPackage, directory, language):
             output.close()
 
         except Exception, ex:
-            # print ex.__class__, ' ', ex
-            # sys.exit(1)
             e = exception.SourceFileCreationError(profile[2])
             exception.error_handler(e)
 
-    # Por cada subpaquete
+    # For each subpackage
     for package in containerPackage['package'] + containerPackage['model']:
 
         if 'framework' not in package['stereotype']:
             generate(package, packDirectory, language)
 
 
-# Si se llama desde consola este modulo
+# Call the main function
 if __name__ == '__main__':
 
     try:
         print '=== Genna v0.1 ==='
 
-        # Se analizan los argumentos
+        # Parse the arguments
         args = parse(sys.argv[1:])
 
         print 'Start time:', time.ctime()
         print 'Generating code for model in: %s' % args.input_filename
 
-        # Se extrae el modelo
+        # Extract the model
         if settings.STEPS:
             print 'Parsing XMI file...'
 
         parser = Parser(args.input_filename)
         table = parser.getModelTable()
 
-        # Se transforma el modelo
+        # Transform the model
         if settings.STEPS:
             print 'Suitting UML model...'
 
@@ -151,7 +149,7 @@ if __name__ == '__main__':
         if settings.STEPS:
             print 'Generating source code...'
 
-        # Se crea la cabecera con todas las definiciones para C++
+	# Create header with all definitions for C++
         if args.language == 'cplusplus':
             modelDirectory = os.path.join(args.output_directory,
                                           suittedModel['name'])
@@ -174,7 +172,7 @@ if __name__ == '__main__':
             output.write(code)
             output.close()
 
-        # Se genera el codigo fuente
+        # Generate source code
         generate(suittedModel, args.output_directory, args.language)
 
         if suittedModel['hasStateMachine']:

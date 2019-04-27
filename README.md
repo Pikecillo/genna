@@ -27,7 +27,16 @@ Run `sudo ./install.sh`
 
 ## Example usage
 
-From folder `genna` run `python genna.py ../sample_models/Tetris_java.xmi -l java -v -o .`
+Run `python genna.py sample_models/Tetris_java.xmi -l java -v -o .`
+
+A directory `Tetris` will be created in the current directory. It will contain the source code for the model. Now compile the code, and
+run it
+
+```
+cd Tetris
+javac *.java __smbase/*.java
+java TetrisWindow
+```
 
 ## References
 
