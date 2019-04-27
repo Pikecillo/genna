@@ -1,6 +1,6 @@
 ##======================================================================
 ##
-## Copyright (C) 2007. Mario Rincon Nigro.
+## Copyright (C) 2007-2019. Mario Rincon Nigro.
 ## Universidad de Los Andes.
 ##
 ## This file is part of Genna.
@@ -23,26 +23,26 @@
 import os
 import os.path
 
-# Path hacia este archivo.
+# Path to this file
 GENNA_DIR = os.path.abspath(os.path.dirname(__file__))
 
-# Tipo de generacion
+# Code generation mode
 STATIC = '1'
 STATE_MACHINES = '2'
 ACTIVITY_GRAPHS = '3'
 FULL = '4'
 
-# Argumentos por omision.
+# Default arguments
 DEFAULT_GENERATED_CODE_DIR = os.getcwd()
 DEFAULT_LANGUAGE = 'cplusplus'
 VERBOSE = False
 STEPS = False
 BEHAVIORAL_GENERATION = FULL
 
-# Ubicacion de las clases bases para maquinas de estado
+# Path to base classes for state machines
 SMBASE_DIR = os.path.join(GENNA_DIR, 'smbase')
 
-# Ubicacion de las plantillas de codigo
+# Path to source code templates
 TEMPLATE_DIR = os.path.join(GENNA_DIR, 'templates')
 CPLUSPLUS_TEMPLATES_DIR = os.path.join(TEMPLATE_DIR, 'cplusplus')
 JAVA_TEMPLATES_DIR = os.path.join(TEMPLATE_DIR, 'java')

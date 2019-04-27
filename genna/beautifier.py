@@ -1,6 +1,6 @@
 ##======================================================================
 ##
-## Copyright (C) 2007. Mario Rincon Nigro.
+## Copyright (C) 2007-2019. Mario Rincon Nigro.
 ## Universidad de Los Andes.
 ##
 ## This file is part of Genna.
@@ -20,28 +20,27 @@
 ##
 ##======================================================================
 
-# Embellecedor de codigo. Recibe codigo fuente en C++
-# y realiza algunas transformaciones  de formato para
-# favorecer su legibilidad.
+# Code beautifier. Takes source code in C++, Java, and Cheetah templates, and carries
+# out some formatting transformation that improve legibility
 
 import re;
 import string;
 
-# Lista de sustituciones
+# List of substitutions
 _substitutions = [
-    ('[\t\r\f\v]', ''),         # Caracteres blancos no espacio ni \n
-    ('\n +', '\n'),             # Espacios tras nueva linea
-    ('^\s*', '\n'),             # Dejar una linea al inicio
-    ('\s*$', '\n'),             # Dejar una linea al final
-    ('\n{3,}', '\n\n'),         # Lineas vacias
-    (' {2,}', ' '),             # Espacios consecutivos
-    (r'([\w\$]+) +\(', r'\1('), # Espacios vacios antes de (
-    ('[ \t\r\f\v]*{', ' {'),    # Espacios vacios antes de {
+    ('[\t\r\f\v]', ''),         # Remove whitespaces other than ' ' or '\n'
+    ('\n +', '\n'),             # Remove spaces after new line
+    ('^\s*', '\n'),             # Leave empty line at the beginning
+    ('\s*$', '\n'),             # Leave empty line at the end
+    ('\n{3,}', '\n\n'),         # Remove consecutive empty lines
+    (' {2,}', ' '),             # Remove consecutive ' '
+    (r'([\w\$]+) +\(', r'\1('), # Remove whitespaces before (
+    ('[ \t\r\f\v]*{', ' {'),    # Remove whitespaces before {
     ('{\n+', '{\n'),
-    ('\n+}', '\n}'),            # Saltos de linea antes de }
-    (' +;', ';'),               # Espacios antes de ;
-    (' +,', ','),               # Espacios antes de ,
-    (', {2,}', ', '),           # Espacios consecutivos despues de ,
+    ('\n+}', '\n}'),            # Remove consecutive new lines before }
+    (' +;', ';'),               # Remove whitespaces before ;
+    (' +,', ','),               # Remove spaces before ,
+    (', {2,}', ', '),           # Remove consecutive spaces after ,
     ('\([ \t\r\f\v]*', '('),
     ('[ \t\r\f\v]*\)', ')')
 ]
@@ -49,7 +48,7 @@ _substitutions = [
 _superTotal = 0
 _superUser = 0
 
-# Esta clase realiza la transformacion del codigo
+# This class applies the transformations
 class Beautifier:
 
     def __init__(self, code):
@@ -62,10 +61,10 @@ class Beautifier:
         indent = 0
         lines = []
 
-        # El codigo se divide en lineas para tabularse
+        # The code is first split in lines
         for line in string.split(code, '\n'):
 
-            # Si la linea no esta vacia
+            # If the line is not empty
             if line:
                 if re.search('^(public|private|protected):', line):
                     indented = ' ' * (4 * indent - 2) + line
@@ -100,7 +99,7 @@ def countLines(linesList):
 
     for line in linesList:
 
-        # Si la linea no esta vacia
+        # If the line is empty
         if not re.search('^\s*$|^\s*}\s*$', line):
             if not inExpression:
                 if re.search('/\*%_<\*/', line):
@@ -149,10 +148,10 @@ def beautifulCheetah(code):
     indent = 0
     lines = []
 
-    # El codigo se divide en lineas para tabularse
+    # Split the code in lines
     for line in string.split(code, '\n'):
 
-        # Si la linea no esta vacia
+        # If the line is not empty
         if line:
             indented = ' ' * 4 * indent + line
             if '#for' in line or '#if' in line:
@@ -170,3 +169,4 @@ def beautifulCheetah(code):
     code = string.join(lines, '\n')
         
     return code
+

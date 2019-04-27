@@ -1,6 +1,6 @@
 ##======================================================================
 ##
-## Copyright (C) 2007. Mario Rincon Nigro.
+## Copyright (C) 2007-2019. Mario Rincon Nigro.
 ## Universidad de Los Andes.
 ##
 ## This file is part of Genna.

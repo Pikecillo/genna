@@ -1,6 +1,6 @@
 ##======================================================================
 ##
-## Copyright (C) 2007. Mario Rincon Nigro.
+## Copyright (C) 2007-2019. Mario Rincon Nigro.
 ## Universidad de Los Andes.
 ##
 ## This file is part of Genna.
@@ -27,7 +27,7 @@ import time
 import xml.sax._exceptions
 
 
-# Modulo de excepciones y manejo de errores.
+# Module for exceptions and error handling.
 
 class NoModelFoundError(Exception):
 
@@ -72,38 +72,38 @@ class NotAStringError(Exception):
 
 
 def error_handler(exc):
-    # Interrupcion de teclado
+
     if exc.__class__ == KeyboardInterrupt:
         print 'Code generation process has been interrupted at', time.ctime()
         sys.exit(1)
 
-    # Salida del sistema
     elif exc.__class__ == SystemExit:
         pass
 
-    # Excepciones generadas por modulo parser
+    # Exceptions raised by Parser module
     elif issubclass(exc.__class__, xml.sax._exceptions.SAXException):
-        print 'genna: error: ' + str(exc)
+        print 'genna: error - ' + str(exc)
         generation_abort()
 
     elif exc.__class__ == NoModelFoundError:
-        print 'genna: error: no UML model found in input file: ', exc.filename
+        print 'genna: error - no UML model found in input file: ', exc.filename
         generation_abort()
 
-    # Excepciones generadas por modulo principal
+    # Exceptions raised by main module
     elif exc.__class__ == DirectoryCreationError:
-        print 'genna: error: impossible to create directory: ', exc.directory 
+        print 'genna: error - impossible to create directory: ', exc.directory 
 
     elif exc.__class__ == SourceFileCreationError:
-        print 'genna: error: impossible to create source file: ', \
+        print 'genna: error: - impossible to create source file: ', \
               exc.sourcefile
     
     else:
         # print exc.__class__, ' ', exc
-        print 'genna: error: check input model for unsupported elements'
+        print 'genna: error - check input model for unsupported elements'
         generation_abort()
         
 
 def generation_abort():
     print 'Code generation process aborted at', time.ctime()
     sys.exit(1)
+
