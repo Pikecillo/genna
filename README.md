@@ -15,3 +15,8 @@ The target languages for code generation are C++, and Java.
 Genna is written in Python. Genna requires the
 [Cheetah Template Engine 0.9.16](http://cheetahtemplate.org/) or superior, and libraries: [PyXML 0.8.4](https://pypi.org/project/PyXML/)
 and [4Suite-XML 1.0.2](https://pypi.org/project/4Suite-XML/). Code generated in C++ might need QT library 4.1.2 or superior.
+
+## Installation
+
+Run `sudo ./install.sh`
+
