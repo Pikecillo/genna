@@ -31,7 +31,8 @@ From folder `genna` run `python genna.py ../sample_models/Tetris_java.xmi -l jav
 
 ## References
 
-+[Generacion automatica de codigo a partir de maquinas de estado finito. *M. Rincon Nigro,
+[Generacion automatica de codigo a partir de maquinas de estado finito. *M. Rincon Nigro,
 J. Aguilar Castro, F. Hidrobo Torres*. **Computacion y Sistemas**, 2011](http://www.scielo.org.mx/pdf/cys/v14n4/v14n4a7.pdf) (In Spanish)
-+[Generacion automatica the codigo fuente en lenguajes orientados a objetos a partir de modelos del UML. *M. Rincon Nigro*.
+
+[Generacion automatica the codigo fuente en lenguajes orientados a objetos a partir de modelos del UML. *M. Rincon Nigro*.
 Mecanografiado de Tesis (Ingenieria de Sistemas) - Universidad de los Andes. Facultad de Ingenieria. Escuela de Sistemas. 2007](https://www.researchgate.net/publication/44471254_Generacion_automatica_de_codigo_fuente_en_lenguajes_orientados_a_objetos_a_partir_de_modelos_del_UML_Mario_Rincon_Nigro) (In Spanish)
