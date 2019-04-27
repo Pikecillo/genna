@@ -1,0 +1,212 @@
+##======================================================================
+##
+## Copyright (C) 2007. Mario Rincon Nigro.
+## Universidad de Los Andes.
+##
+## This file is part of Genna.
+##
+## Genna is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 2 of the License, or
+## (at your option) any later version.
+##
+## Genna is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with Genna.  If not, see <http://www.gnu.org/licenses/>.
+##
+##======================================================================
+
+##================================================
+## interface.cpp.tmpl: plantilla para crear archivos
+## de cabecera con definiciones de clase en C++
+##================================================
+
+##================
+## GUARDIA DE COMPILACION
+##================
+#set $_ifndef_directive = '#ifndef ' + $upper($join($class.namespace + [$class.name], '_')) + '_H'
+$_ifndef_directive
+#set $_define_directive = '#define ' + $upper($join($class.namespace + [$class.name], '_')) + '_H'
+$_define_directive
+
+##================
+## INDICADAS EXPLICITAMENTE
+##================
+#for $_tag in $class.taggedValues:
+    #if $_tag.type == 'header_include':
+        #set $_include_directive = '#include ' + $_tag.dataValue
+        ##/*%_<*/
+        $_include_directive
+        ##/*>_%*/
+    #end if
+#end for
+
+#set $_include_directive = '#include "all_definitions.h"'
+$_include_directive
+
+##================
+## CREADAS POR DEPENDENCIAS
+##================
+#for $_dependency in $class.dependency
+    # SI NO DEPENDE DE SI MISMA Y LA CLASE DEPENDENCIA NO ES UNA UTILIDAD
+    #if $_dependency != $class.namespace and $_dependency[1]
+        #set $_include_directive = '#include "' + $join($_dependency[0], '/') + '.h"'
+        $_include_directive
+    #end if
+#end for
+
+##================
+## DIRECTIVAS USING
+##================
+#for $_tag in $class.taggedValues:
+    #if $_tag.type == 'using_directive':
+        ##/*%_<*/
+        using namespace $_tag.dataValue;
+        ##/*>_%*/
+    #end if
+#end for
+
+##================
+## APERTURA DEL ESPACIO DE NOMBRE DE INTERFAZ
+##================
+#for $_name in $class.namespace[:-1]
+    namespace $_name {
+#end for
+
+##================
+## HERENCIA
+##================
+#set $_generalize = []
+#for $_superClass in $class.generalize
+    #silent $_generalize.append('public ' + $_superClass)
+#end for
+#if $_generalize
+    #set $_generalize = ' : ' + $join($_generalize, ', ')
+#else
+    #set $_generalize = ''
+#end if
+
+##================
+## DEFINICION DE INTERFAZ
+##================
+class $class.name $_generalize {
+
+##====================
+## EXPANSIONES DE MACRO PARA CLASE
+##====================
+#for $_tag in $class.taggedValues:
+    #if $_tag.type == 'macro_expand':
+        ##/*%_<*/
+        $_tag.dataValue
+        ##/*>_%*/
+    #end if
+#end for
+
+##================
+## DECLARACION DE OPERACIONES
+##================
+#set $_visibilities = ['public', 'package', 'protected', 'private']
+#for $_visibility in $_visibilities
+    #if $class.operation[$_visibility]
+
+        #if $_visibility == 'package':
+            public:
+        #else
+            $_visibility:
+        #end if
+    #end if
+    #for $_operation in $class.operation[$_visibility]
+        ##================
+        ## MODIFICADORES DE OPERACION
+        ##================
+        #set $_modifiers = []
+        #if $_operation.ownerScope == 'classifier'
+            #silent $_modifiers.append('static')
+        #end if
+        #set $_modifiers = $join($_modifiers, ' ')
+        #if $_operation.isQuery
+            #set $_queryness = 'const'
+        #else
+            #set $_queryness = ''
+        #end if
+        ##================
+        ## PARAMETROS DE OPERACION
+        ##================
+        #set $_parameters = []
+        #for $_param in $_operation.parameter
+            #set $_constness = ''
+            #if 'const' in $_param.stereotype
+                #set $_constness = 'const'
+            #end if
+            #set $_pointer_status = ''
+            #for $_tag in $_param.taggedValues:
+                #if $_tag.type == 'pointer_status':
+                    #set $_pointer_status = $_tag.dataValue
+                    #break
+                #end if
+            #end for
+            #set $_reference_status = ''
+            #if 'reference' in $_return.stereotype
+                #set $_reference_status = '&'
+            #end if
+            #set $_array_size = ''
+            #for $_tag in $_param.taggedValues:
+                #if $_tag.type == 'array_size':
+                    #set $_array_size = $_tag.dataValue
+                    #break
+                #end if
+            #end for
+            #silent $_parameters.append($join([$_constness, $_param.type, $_pointer_status, $_reference_status, $_param.name, $_array_size], ' '))
+        #end for
+        #set $_parameters = $join($_parameters, ', ')
+        ##================
+        ## SI ES UN CONSTRUCTOR O DESTRUCTOR NO DEVUELVE NADA
+        ##================
+        #if 'create' in $_operation.stereotype or 'destroy' in $_operation.stereotype:
+            #set $_return = ''
+        #else
+            #set $_return = $_operation.return
+        #end if
+        ##=================
+        ## PARA PARAMETRO DE DEVOLUCION
+        ##=================
+        #set $_pointer_status = ''
+        #set $_reference_status = ''
+        #if $_return
+            #for $_tag in $_return.taggedValues:
+                #if $_tag.type == 'pointer_status':
+                    #set $_pointer_status = $_tag.dataValue
+                    #break
+                #end if
+            #end for
+            #if 'reference' in $_return.stereotype
+                #set $_reference_status = '&'
+            #end if
+            #set $_returned = $_return.type
+        #end if
+        ##================
+        ## DECLARACION DE OPERACION
+        ##================
+        #if 'destroy' in $_operation.stereotype
+            virtual ~${class.name}() = 0;
+        #else if 'create' not in $_operation.stereotype
+            virtual $_modifiers $_returned $_pointer_status $_reference_status ${_operation.name} $_queryness ($_parameters) = 0;
+        #end if
+    #end for
+#end for
+
+};
+
+##================
+## CIERRE DEL ESPACIO DE NOMBRES DE LA INTERFAZ
+##================
+#for $_name in $class.namespace[:-1]
+    }
+#end for
+
+#set $_endif_directive = '#endif'
+$_endif_directive

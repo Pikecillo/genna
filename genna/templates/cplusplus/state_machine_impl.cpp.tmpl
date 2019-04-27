@@ -1,0 +1,322 @@
+##======================================================================
+##
+## Copyright (C) 2007. Mario Rincon Nigro.
+## Universidad de Los Andes.
+##
+## This file is part of Genna.
+##
+## Genna is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 2 of the License, or
+## (at your option) any later version.
+##
+## Genna is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with Genna.  If not, see <http://www.gnu.org/licenses/>.
+##
+##======================================================================
+
+##================================================
+## state_machine_impl.cpp.tmpl: implementacion de
+## una maquina de estado en contexto de una clase
+## en C++. Esta plantilla esta incluida en
+## class_impl.cpp.tmpl
+##================================================
+
+##===========================
+## DEFINICION DE OPERACIONES PRIVADAS EN CLASE CONTEXTO PARA ACCIONES DE ESTADO
+##===========================
+#for $_item in ['simpleState', 'compositeState', 'finalState']
+    #for $_state in $_state_machine.states[$_item]
+
+        #if $_state is not $_state_machine.top
+            #if $_state.entry
+                void $_class.name::__${capitalize($_state.name)}Entry(){
+                    ##/*%_<*/
+                    $join($_state.entry, '\n')
+                    ##/*>_$*/
+                }
+            #end if
+
+            ##=========================
+            ## LOS ESTADOS COMPUESTOS NO TIENEN DO ACTIVITY
+            ##=========================
+            #if $_state.type != 'compositeState' and $_state.doActivity
+                void $class.name::__${capitalize($_state.name)}DoActivity(){
+                    ##/*%_<*/
+                    $join($_state.doActivity, '\n')
+                    ##/*>_%*/
+                }
+            #end if
+
+            ##=========================
+            ## LOS ESTADOS FINALES NO TIENEN EXIT
+            ##=========================
+            #if $_state.type != 'finalState' and $_state.exit
+                void $_class.name::__${capitalize($_state.name)}Exit(){
+                    ##/*%_<*/
+                    $join($_state.exit, '\n')
+                    ##/*>_%*/
+                }
+            #end if
+        #end if
+
+    #end for
+#end for
+
+##============================
+## DEFINICION DE OPERACIONES PRIVADAS EN CLASE PRIVADA PARA EFFECTOS Y GUARDIAS DE TRANSICION
+##============================
+#for $_item in ['callEvent', 'timeEvent', 'none']
+    #for $_transition in $_state_machine.transition[$_item]
+
+        ##====================
+        ## OPERACION DE EFECTO
+        ##====================
+        #if $_transition.effect
+            void $_class.name::__${capitalize($_transition.name)}Effect(){
+                ##/*%_<*/
+                $join($_transition.effect, '\n')
+                ##/*>_%*/
+            }
+        #end if
+
+        ##====================
+        ## OPERACION PARA GUARDIA
+        ##====================
+        #if $_transition.guard
+            bool $_class.name::__${capitalize($_transition.name)}Guard(){
+                ##/*%_<*/
+                return ($_transition.guard);
+                ##/*>_%*/
+            }
+        #end if
+
+        ##=======================
+        ## OPERACION PARA RETARDO DE EVENTO DE TIEMPO
+        ##=======================
+        #if $_item == 'timeEvent'
+            int $class.name::__${capitalize($_transition.name)}When(){
+                ##/*%_<*/
+                return $_transition.trigger.when;
+                ##/*>_%*/
+            }
+        #end if
+    #end for
+#end for
+
+##=======================
+## CONSTRUCTOR DE MAQUINA DE ESTADOS
+##=======================
+$_class.name::${_class.name}StateMachine::${_class.name}StateMachine(void *c) : __smbase::StateMachine(c){ }
+
+##=======================
+## DESTRUCTOR DE MAQUINA DE ESTADOS
+##=======================
+$_class.name::${_class.name}StateMachine::~${_class.name}StateMachine(){
+#for $_item in ['compositeState', 'simpleState', 'finalState', 'pseudostate']
+    #for $_state in $_state_machine.states[$_item]
+        #if ($_state is not $_state_machine.top) and ($_item != 'pseudostate' or ($_item == 'pseudostate' and $_state.kind == 'initial'))
+            delete $lowerize($_state.name);
+        #end if
+    #end for
+#end for
+#for $_item in ['callEvent', 'timeEvent', 'none']
+    #for $_transition in $_state_machine.transition[$_item]
+        delete $lowerize($_transition.name);
+    #end for
+#end for
+    postEvent(new __smbase::Event(__smbase::StateMachine::DIE));
+    this->wait();
+}
+
+##==============================
+## OPERACION DE INICIALIZACION DE MAQUINA DE ESTADOS
+##==============================
+void $_class.name::${_class.name}StateMachine::init(){
+#for $_item in ['compositeState', 'simpleState', 'finalState', 'pseudostate']
+    #for $_state in $_state_machine.states[$_item]
+        #if ($_state is not $_state_machine.top) and ($_item != 'pseudostate' or ($_item == 'pseudostate' and $_state.kind == 'initial'))
+            $lowerize($_state.name) = new ${capitalize($_state.name)}(this);
+        #end if
+    #end for
+#end for
+#for $_item in ['callEvent', 'timeEvent', 'none']
+    #for $_transition in $_state_machine.transition[$_item]
+        #set $_hasEffect = 'false'
+        #if $_transition.effect
+            #set $_hasEffect = 'true'
+        #end if
+        $lowerize($_transition.name) = new ${capitalize($_transition.name)}($_hasEffect, this);
+    #end for
+#end for
+
+#for $_item in ['compositeState', 'simpleState', 'finalState', 'pseudostate']
+    #for $_state in $_state_machine.states[$_item]
+        #if ($_state is not $_state_machine.top) and ($_item != 'pseudostate' or ($_item == 'pseudostate' and $_state.kind == 'initial'))
+            ${lowerize($_state.name)}->setDirectAncestor($lowerize($_state.directAncestor.name));
+        #end if
+    #end for
+#end for
+
+innermostActive = $lowerize($_state_machine.top.initial.name);
+}
+
+##=================================
+## DEFINICION DE OPERACIONES DE ESTADO DE MAQUINA DE ESTADO
+##=================================
+#for $_item in ['simpleState', 'compositeState', 'finalState', 'pseudostate']
+    #for $_state in $_state_machine.states[$_item]
+
+    #if ($_state is not $_state_machine.top) and ($_item != 'pseudostate' or ($_item == 'pseudostate' and $_state.kind == 'initial'))
+
+        ##=================================
+        ## DEFINICION DE CONSTRUCTOR PARA ESTADO DE MAQUINA DE ESTADO
+        ##=================================
+        $_class.name::${_class.name}StateMachine::$capitalize($_state.name)::$capitalize($_state.name)(__smbase::StateMachine *sm) : __smbase::State(sm) { }
+
+        ##=================================
+        ## DEFINICION DEL MANEJADOR DE EVENTOS
+        ##=================================
+        __smbase::EventHandle *$_class.name::${_class.name}StateMachine::$capitalize($_state.name)::handleEvent(__smbase::Event *e){
+
+            __smbase::EventHandle *handle = 0;
+        #if $_state.outgoing.keys()
+            std::vector<__smbase::Transition *> transitionSequence;
+            ${_class.name}StateMachine *sm = static_cast<${_class.name}StateMachine *>(stateMachine);
+
+            switch(e->getName()){
+            #for $_trigger in $_state.outgoing.keys()
+                #if $_trigger == 'none'
+                    #if $_state.type == 'compositeState'
+                        case __smbase::StateMachine::COMPLETED:
+                    #else
+                        case __smbase::StateMachine::COMPLETION:
+                    #end if
+                #else
+                    case ${_class.name}::__${_trigger}:
+                #end if
+                ## TODAS LAS TRANSICIONES DE $_state.outgoing[$_trigger] ESTAN ASOCIADAS
+                ## AL MISMO TRIGGER. ESTO QUIERE DECIR SI ESE EVENTO ES DE TIEMPO
+                #set $_some_transition = $_state.outgoing[$_trigger][0]
+                #if $_some_transition in $_state_machine.transition['timeEvent']
+                    if(isWaited(e)){
+                #end if
+                #set global $_transition_list = $_state.outgoing[$_trigger]
+                #set $_source = $join_path($CPLUSPLUS_TEMPLATES_DIR, 'transition.cpp.tmpl')
+                #include $_source
+                #if $_state.outgoing[$_trigger][0] in $_state_machine.transition['timeEvent']
+                        removeWaited(e);
+                    }
+                #end if
+                break;
+
+            #end for
+            }
+        #end if
+            return handle;
+        }
+
+        ##==================
+        ## ACCION DE ENTRADA PARA ESTADO
+        ##==================
+        #if $_state.entry or $_state.hasOutgoingTimeEvent or ($_state.type == 'compositeState' and $_state.initial)
+            void $_class.name::${_class.name}StateMachine::$capitalize($_state.name)::entry(){
+            #if $_state.hasOutgoingTimeEvent
+                __smbase::Event *e;
+            #end if
+            ${_class.name}StateMachine *sm = static_cast<${_class.name}StateMachine *>(stateMachine);
+            #if $_state.hasOutgoingTimeEvent or $_state.entry
+                $_class.name *context = static_cast<$_class.name *>(sm->context);
+            #end if
+
+            #if $_state.entry
+                context->__${capitalize($_state.name)}Entry();
+            #end if
+
+            #if $_state.hasOutgoingTimeEvent
+                #for $_trigger in $_state.outgoing.keys()
+                    #set $_some_transition = $_state.outgoing[$_trigger][0]
+                    #if $_some_transition in $_state_machine.transition['timeEvent']
+                        e = new __smbase::Event(${_class.name}::__$_trigger);
+                        addWaited(e);
+                        sm->postTimeEvent(e, context->__${capitalize($_some_transition.name)}When());
+                    #end if
+                #end for
+            #end if
+
+            #if $_state.type == 'compositeState' and $_state.initial
+                if(this == stateMachine->getInnermostActive()){
+                    stateMachine->setInnermostActive(sm->$lowerize($_state.initial.name));
+                    ## stateMachine->getInnermostActive()->entry();
+                }
+            #end if
+            }
+        #end if
+
+        ##==================
+        ## ACCION DO PARA ESTADO
+        ##==================
+        #if $_state.type != 'compositeState'
+            void $_class.name::${_class.name}StateMachine::$capitalize($_state.name)::doActivity(){
+                ${_class.name}StateMachine *sm = static_cast<${_class.name}StateMachine *>(stateMachine);
+            #if $_state.doActivity
+                $_class.name *context = static_cast<$_class.name *>(sm->context);
+
+                context->__${capitalize($_state.name)}DoActivity();
+            #end if
+            #if $_state.type != 'finalState'
+                sm->postCompletionEvent(new __smbase::Event(__smbase::StateMachine::COMPLETION));
+            #else
+                sm->postCompletionEvent(new __smbase::Event(__smbase::StateMachine::COMPLETED));
+            #end if
+            }
+        #end if
+
+        ##==================
+        ## ACCION DE SALIDA PARA ESTADO
+        ##==================
+        #if $_state.type != 'finalState' and $_state.exit or $_state.hasOutgoingTimeEvent
+            void $_class.name::${_class.name}StateMachine::$capitalize($_state.name)::exit(){
+            #if $_state.exit
+                ${_class.name}StateMachine *sm = static_cast<${_class.name}StateMachine *>(stateMachine);
+                $_class.name *context = static_cast<$_class.name *>(sm->context);
+
+                context->__${capitalize($_state.name)}Exit();
+            #end if
+            #if $_state.hasOutgoingTimeEvent
+                clearWaited();
+            #end if
+            }
+        #end if
+
+    #end if
+
+    #end for
+#end for
+
+##==============================
+## DEFINICION DE OPERACIONES DE TRANSICION
+##==============================
+#for $_item in ['callEvent', 'timeEvent', 'none']
+    #for $_transition in $_state_machine.transition[$_item]
+
+        $_class.name::${_class.name}StateMachine::$capitalize($_transition.name)::${capitalize($_transition.name)}(bool b, __smbase::StateMachine *sm) : __smbase::Transition(b, sm){ }
+
+        ##==============================
+        ## DEFINICION DE OPERACION DE EFECTO
+        ##==============================
+        #if $_transition.effect
+        void $_class.name::${_class.name}StateMachine::$capitalize($_transition.name)::executeEffect(){
+            ${_class.name}StateMachine *sm = static_cast<${_class.name}StateMachine *>(stateMachine);
+            static_cast<$_class.name *>(sm->context)->__${capitalize($_transition.name)}Effect();
+        }
+        #end if
+
+    #end for
+#end for
+

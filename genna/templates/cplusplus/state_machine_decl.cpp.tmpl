@@ -1,0 +1,175 @@
+##======================================================================
+##
+## Copyright (C) 2007. Mario Rincon Nigro.
+## Universidad de Los Andes.
+##
+## This file is part of Genna.
+##
+## Genna is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 2 of the License, or
+## (at your option) any later version.
+##
+## Genna is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with Genna.  If not, see <http://www.gnu.org/licenses/>.
+##
+##======================================================================
+
+##================================================
+## state_machine_decl.cpp.tmpl: declaraciones
+## correspondientes a una maquina de estado en
+## contexto de una clase en C++ en C++. Esta
+## plantilla esta incluida en
+## class_definition.cpp.tmpl
+##================================================
+
+private:
+
+class ${_class.name}StateMachine;
+friend class ${_class.name}StateMachine;
+
+${_class.name}StateMachine *__mySM;
+
+##===========================
+## DEFINICION DE CONSTANTES PARA NOMBRES DE EVENTOS.
+## SE DECLARA UNA CONSTANTE POR CADA EVENTO DE LLAMADA
+## Y CADA EVENTO DE TIEMPO.
+##===========================
+#set $_event_names = []
+#set $_i = 0
+#for $_item in ['callEvent', 'timeEvent']
+    #for $_transition in $_state_machine.transition[$_item]
+        #if $_transition.trigger.name not in $_event_names
+            #silent $_event_names.append($_transition.trigger.name)
+            ##static const int __$capitalize($_transition.trigger.name) = $_i;
+            static const int __$_transition.trigger.name = $_i;
+	    #set $_i += 1
+        #end if
+    #end for
+#end for
+
+##===========================
+## DECLARACION DE OPERACIONES PRIVADAS EN CLASE CONTEXTO PARA ACCIONES DE ESTADO
+##===========================
+#for $_item in ['simpleState', 'compositeState', 'finalState']
+    #for $_state in $_state_machine.states[$_item]
+        #if $_state is not $_state_machine.top
+            #if $_state.entry
+                void __${capitalize($_state.name)}Entry();
+            #end if
+            ##=============================
+            ## LOS ESTADOS COMPUESTOS NO TIENEN DO ACTIVITY
+            ##=============================
+            #if $_state.type != 'compositeState' and $_state.doActivity
+                void __${capitalize($_state.name)}DoActivity();
+            #end if
+            ##=============================
+            ## LOS ESTADOS FINALES NO TIENEN EXIT
+            ##=============================
+            #if $_state.type != 'finalState' and $_state.exit
+                void __${capitalize($_state.name)}Exit();
+            #end if
+        #end if
+    #end for
+#end for
+
+##============================
+## DEFINICION DE OPERACIONES PRIVADAS EN CLASE PRIVADA PARA EFFECTOS Y GUARDIAS DE TRANSICION
+##============================
+#for $_item in ['callEvent', 'timeEvent', 'none']
+    #for $_transition in $_state_machine.transition[$_item]
+        #if $_transition.effect
+            void __${capitalize($_transition.name)}Effect();
+        #end if
+        #if $_transition.guard
+            bool __${capitalize($_transition.name)}Guard();
+        #end if
+        #if $_item == 'timeEvent'
+            int __${capitalize($_transition.name)}When();
+        #end if
+    #end for
+#end for
+
+##=============================
+## DEFINICION DE CLASE DE MAQUINA DE ESTADO
+##=============================
+class ${_class.name}StateMachine : public __smbase::StateMachine{
+
+private:
+#for $_item in ['simpleState', 'compositeState', 'finalState', 'pseudostate']
+    #for $_state in $_state_machine.states[$_item]
+        #if ($_state is not $_state_machine.top) and ($_item != 'pseudostate' or ($_item == 'pseudostate' and $_state.kind == 'initial'))
+            __smbase::State *$lowerize($_state.name);
+        #end if
+    #end for
+#end for
+#for $_item in ['callEvent', 'timeEvent', 'none']
+    #for $_transition in $_state_machine.transition[$_item]
+        __smbase::Transition *$lowerize($_transition.name);
+    #end for
+#end for
+
+public:
+    ${_class.name}StateMachine(void *c);
+    ~${_class.name}StateMachine();
+
+protected:
+    void init();
+
+private:
+##=========================
+##DEFINICION DE CLASES DE ESTADO
+##=========================
+#for $_item in ['simpleState', 'compositeState', 'finalState', 'pseudostate']
+    #for $_state in $_state_machine.states[$_item]
+
+    #if ($_state is not $_state_machine.top) and ($_item != 'pseudostate' or ($_item == 'pseudostate' and $_state.kind == 'initial'))
+
+        friend class $capitalize($_state.name);
+
+        class $capitalize($_state.name) : public __smbase::State{ 
+
+        public:
+            ${capitalize($_state.name)}(__smbase::StateMachine *sm);
+            __smbase::EventHandle *handleEvent(__smbase::Event *e);
+            #if $_state.entry or $_state.hasOutgoingTimeEvent or ($_state.type == 'compositeState' and $_state.initial)
+                void entry();
+            #end if
+            #if $_state.type != 'compositeState'
+                void doActivity();
+            #end if
+            #if $_state.type != 'finalState' and $_state.exit or $_state.hasOutgoingTimeEvent
+                void exit();
+            #end if
+        };
+    #end if
+
+    #end for
+#end for
+
+##==============================
+## DECLARACION DE CLASES DE TRANSICION
+##==============================
+#for $_item in ['callEvent', 'timeEvent', 'none']
+    #for $_transition in $_state_machine.transition[$_item]
+
+        friend class $capitalize($_transition.name);
+
+        class $capitalize($_transition.name) : public __smbase::Transition {
+
+        public:
+            ${capitalize($_transition.name)}(bool b, __smbase::StateMachine *);
+            #if $_transition.effect
+                void executeEffect();
+            #end if
+        };
+
+    #end for
+#end for
+
+};

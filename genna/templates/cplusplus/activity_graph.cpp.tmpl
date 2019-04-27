@@ -1,0 +1,108 @@
+##======================================================================
+##
+## Copyright (C) 2007. Mario Rincon Nigro.
+## Universidad de Los Andes.
+##
+## This file is part of Genna.
+##
+## Genna is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 2 of the License, or
+## (at your option) any later version.
+##
+## Genna is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with Genna.  If not, see <http://www.gnu.org/licenses/>.
+##
+##======================================================================
+
+##================================================
+## activity_graph.java.tmpl: plantilla para
+## implementar diagramas de actividades en el
+## contexto de una operacion de clase en C++
+##================================================
+
+#set $_activityGraph = $_operation.activityGraph
+
+##================
+## DECLARACION DE VARIABLES DE LA OPERACION
+##================
+#for $_tag in $_activityGraph.taggedValues:
+    #if $_tag.type == 'variables_declaration':
+        ##/*%_<*/
+        $_tag.dataValue
+        ##/*>_%*/
+    #end if
+#end for
+
+int __action__ = $_activityGraph.top.initial.outgoing.none[0].target.label;
+
+while(true) {
+
+switch(__action__) {
+
+##================
+## PSEUDOESTADOS DE DECISION
+##================
+#for $_state in $_activityGraph.states.pseudostate:
+    #if $_state is not $_activityGraph.top.initial
+        case $_state.label:
+        #if $len($_state.outgoing.none) == 1:
+            __action__ = $_state.outgoing.none[0].target.label;
+        #else
+            #set $_transition = $_state.outgoing.none[0]
+            if($_transition.guard){
+                __action__ = $_transition.target.label;
+            }
+            #for $_transition in $_state.outgoing.none[1:]:
+                #if $_transition.guard == '' or $_transition.guard == 'else':
+                    else{
+                    __action__ = $_transition.target.label;
+                    }
+                    #break
+                #else
+                    else if($_transition.guard){
+                    __action__ = $_transition.target.label;
+                    }
+                #end if
+            #end for
+        #end if
+        break;
+
+    #end if
+#end for
+
+##================
+## ESTADOS DE ACCION
+##================
+#for $_activity in $_activityGraph.states.actionState:
+    case $_activity.label:
+    #if $_activity.entry:
+        ##/*%_<*/
+        $join($_activity.entry, '\n')
+        ##/*>_%*/
+    #end if
+    __action__ = $_activity.outgoing.none[0].target.label;
+    break;
+
+#end for
+
+##================
+## ESTADOS FINALES
+##================
+#for $_activity in $_activityGraph.states.finalState:
+    case $_activity.label:
+    #if $_operation.return and $_operation.return.type != 'void' and $_activity.entry:
+        ##/*%_<*/
+        return $_activity.entry[0];
+        ##/*>_%*/
+    #else
+        return;
+    #end if
+#end for
+}
+}

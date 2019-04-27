@@ -1,0 +1,146 @@
+##======================================================================
+##
+## Copyright (C) 2007. Mario Rincon Nigro.
+## Universidad de Los Andes.
+##
+## This file is part of Genna.
+##
+## Genna is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 2 of the License, or
+## (at your option) any later version.
+##
+## Genna is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with Genna.  If not, see <http://www.gnu.org/licenses/>.
+##
+##======================================================================
+
+##================================================
+## class_definition.cpp.tmpl: plantilla para definir
+## una clase en C++. Esta plantilla esta incluida
+## en class_def.cpp.tmpl
+##================================================
+
+##================
+## HERENCIA
+##================
+#set $_generalize = []
+#for $_superClass in $_class.generalize
+    #silent $_generalize.append('public ' + $_superClass)
+#end for
+
+#for $_interface in $_class.realize
+    #silent $_generalize.append('public ' + $_interface)
+#end for
+#if $_generalize
+    #set $_generalize = ' : ' + $join($_generalize, ', ')
+#else
+    #set $_generalize = ''
+#end if
+
+##================
+## DEFINICION DE LA CLASE
+##================
+class $_class.name $_generalize {
+
+##====================
+## EXPANSIONES DE MACRO PARA CLASE
+##====================
+#for $_tag in $class.taggedValues:
+    #if $_tag.type == 'macro_expand':
+        ##/*%_<*/
+        $_tag.dataValue
+        ##/*>_%*/
+    #end if
+#end for
+
+##================
+## DEFINICION DE ATRIBUTOS
+##================
+#set $_source = $join_path($CPLUSPLUS_TEMPLATES_DIR, 'attribute.cpp.tmpl')
+#include $_source 
+
+##================
+## DECLARACION DE OPERACIONES
+##================
+#set $_visibilities = ['public', 'package', 'protected', 'private']
+
+##================
+## DECLARACION DE SEÑALES Y SLOTS PARA QT
+##================
+#set $_signal_slot_count = {'public': 0, 'private': 0, 'package': 0, 'protected': 0}
+#for $_visibility in $_visibilities
+    #for $_oper in $_class.operation[$_visibility]
+        #if 'qt_slot' in $_oper.stereotype or 'qt_signal' in $_oper.stereotype
+            ##=============================
+            ## ESTA CUENTA ES PARA QUE NO QUEDEN INDICADORES DE VISIBILIDAD SUELTOS
+            ## SI TODAS LAS OPERACIONES CON CIERTA VISIBILIDAD UTILIZABAN LOS MACROS DE QT
+            ## PARA SEÑALES O SLOTS
+            ##=============================
+            #set $_signal_slot_count[$_visibility] += 1
+            #if 'qt_slot' in $_oper.stereotype
+                public slots:
+            #else
+                signals:
+            #end if
+            #set global $_operation = $_oper
+            #set $_source = $join_path($CPLUSPLUS_TEMPLATES_DIR, 'operation_declaration.cpp.tmpl')
+            #include $_source
+        #end if
+    #end for
+
+#end for
+
+##=================
+## DECLARACION DEL RESTO DE OPERACIONES
+##=================
+#for $_visibility in $_visibilities
+    #if len($_class.operation[$_visibility]) != $_signal_slot_count[$_visibility]
+        #if $_class.operation[$_visibility]
+            #if $_visibility == 'package':
+                public:
+            #else
+                $_visibility:
+            #end if
+        #end if
+        #for $_oper in $_class.operation[$_visibility]
+            #if 'qt_slot' not in $_oper.stereotype and 'qt_signal' not in $_oper.stereotype
+                #set global $_operation = $_oper
+                #set $_source = $join_path($CPLUSPLUS_TEMPLATES_DIR, 'operation_declaration.cpp.tmpl')
+                #include $_source
+            #end if
+        #end for
+    #end if
+
+#end for
+
+##================
+## DEFINICION DE CLASES INTERNAS
+##================
+#set $_actual_class = $_class
+#for $_inner_class in $_actual_class.classes
+    #if $_inner_class.visibility == 'package':
+        public:
+    #else
+        $_inner_class.visibility:
+    #end if
+    #set global $_class = $_inner_class
+    #set $_source = $join_path($CPLUSPLUS_TEMPLATES_DIR, 'class_definition.cpp.tmpl')
+    #include $_source
+#end for
+
+##================
+## MAQUINA DE ESTADOS
+##================
+#set global $_class = $_actual_class
+#if $_class.stateMachine
+    #set global $_state_machine = $_class.stateMachine[0]
+    #set $_source = $join_path($CPLUSPLUS_TEMPLATES_DIR, 'state_machine_decl.cpp.tmpl')
+    #include $_source
+#end if
+};

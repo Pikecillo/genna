@@ -1,0 +1,52 @@
+##======================================================================
+##
+## Copyright (C) 2007. Mario Rincon Nigro.
+## Universidad de Los Andes.
+##
+## This file is part of Genna.
+##
+## Genna is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 2 of the License, or
+## (at your option) any later version.
+##
+## Genna is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with Genna.  If not, see <http://www.gnu.org/licenses/>.
+##
+##======================================================================
+
+##======================
+## Plantilla para definir los nombres de todas las clases
+## del usuario presentes en el modelo, para C++
+##======================
+
+##======================
+## SE DEFINEN LOS NOMBRES PARA TODAS LAS CLASES SIN EL ESTEREOTIPO 'utility'
+##======================
+#for $_class in $_package.class
+    #if 'utility' not in $_class.stereotype
+        class $_class.name;
+    #end if
+#end for
+
+##======================
+## SE DEFINEN LOS NOMBRES PARA TODAS LAS CLASES DE LOS PAQUETES
+## SIN EL ESTEREOTIPO 'framework'
+##======================
+#set $_all_packs = $_package.package + $_package.model
+#for $_pack in $_all_packs
+
+    #if 'framework' not in $_pack.stereotype
+        namespace $_pack.name {
+        #set global $_package = $_pack
+        #set $_source = $join_path($CPLUSPLUS_TEMPLATES_DIR, 'all_definitions.cpp.tmpl')
+        #include $_source
+        }
+    #end if
+
+#end for

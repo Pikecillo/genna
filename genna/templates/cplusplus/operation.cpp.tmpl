@@ -1,0 +1,133 @@
+##======================================================================
+##
+## Copyright (C) 2007. Mario Rincon Nigro.
+## Universidad de Los Andes.
+##
+## This file is part of Genna.
+##
+## Genna is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 2 of the License, or
+## (at your option) any later version.
+##
+## Genna is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with Genna.  If not, see <http://www.gnu.org/licenses/>.
+##
+##======================================================================
+
+##================================================
+## operation.cpp.tmpl: definicion de operacion de
+## clase en C++
+##================================================
+
+#set $_visibilities = ['public', 'package', 'protected', 'private']
+
+#for $_visibility in $_visibilities
+    #for $_operation in $_class.operation[$_visibility]
+
+        ##==========================
+        ## MODIFICADORES DE LA OPERACION
+        ##==========================
+        #set $_modifiers = []
+        #set $_modifiers = $join($_modifiers, ' ')
+
+        ##==========================
+        ## PARAMETROS DE LA OPERACION
+        ##==========================
+        #set $_parameters = []
+        #if 'destroy' not in $_operation.parameter:
+            #for $_param in $_operation.parameter
+                #set $_constness = ''
+                #if 'const' in $_param.stereotype
+                     #set $_constness = 'const'
+                #end if
+                #set $_pointer_status = ''
+                #for $_tag in $_param.taggedValues:
+                    #if $_tag.type == 'pointer_status':
+                         #set $_pointer_status = $_tag.dataValue
+                         #break
+                    #end if
+                #end for
+                #set $_reference_status = ''
+                #if 'reference' in $_param.stereotype
+                    #set $_reference_status = '&'
+                #end if
+                #set $_array_size = ''
+                #for $_tag in $_param.taggedValues:
+                    #if $_tag.type == 'array_size':
+                         #set $_array_size = $_tag.dataValue
+                         #break
+                    #end if
+                #end for
+                #silent $_parameters.append($join([$_constness, $_param.type, $_pointer_status, $_reference_status, $_param.name, $_array_size], ' '))
+            #end for
+        #end if
+        #set $_parameters = $join($_parameters, ', ')
+
+        ##================
+        ## SI ES UN CONSTRUCTOR O DESTRUCTOR NO DEVUELVE NADA
+        ##================
+        #if 'create' in $_operation.stereotype or 'destroy' in $_operation.stereotype:
+            #set $_return = ''
+        #else
+            #set $_return = $_operation.return
+        #end if
+
+        ##==================
+        ## PARAMETRO DE DEVOLUCION
+        ##==================
+        #set $_pointer_status = ''
+        #set $_reference_status = ''
+        #if $_return
+            #for $_tag in $_return.taggedValues:
+                #if $_tag.type == 'pointer_status':
+                    #set $_pointer_status = $_tag.dataValue
+                    #break
+                #end if
+            #end for
+            #if 'reference' in $_return.stereotype
+                #set $_reference_status = '&'
+            #end if
+            #set $_return = $_return.type
+        #end if
+
+        ##================
+        ## DEFINICION DE OPERACION
+        ##================
+        #if 'create' in $_operation.stereotype
+            $_class.name::${_class.name}($_parameters){
+        #else if 'destroy' in $_operation.stereotype
+            $_class.name::~${_class.name}(){
+        #else
+            $_modifiers $_return $_pointer_status $_reference_status $_class.name::${_operation.name}($_parameters){
+        #end if
+
+        #if $_operation.callEvent
+            #for $_callEvent in $_operation.callEvent
+                #if 'create' not in $_operation.stereotype and 'destroy' not in $_operation.stereotype
+                    __mySM->postEvent(new __smbase::Event(__$_callEvent.name));
+                #end if
+            #end for
+        #else if $_operation.activityGraph
+            #set global $_operation = $_operation
+            #set $_source = $join_path($CPLUSPLUS_TEMPLATES_DIR, 'activity_graph.cpp.tmpl')
+            #include $_source
+        #else if $_operation.method
+            ##/*%_<*/
+            $_operation.method
+            ##/*>_%*/
+        #end if
+        #if 'create' in $_operation.stereotype and $_class.stateMachine:
+            __mySM = new ${_class.name}StateMachine(this);
+        #else if 'destroy' in $_operation.stereotype and $_class.stateMachine:
+            delete __mySM;
+        #end if
+
+        }
+    #end for
+#end for

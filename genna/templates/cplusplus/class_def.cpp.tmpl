@@ -1,0 +1,107 @@
+##======================================================================
+##
+## Copyright (C) 2007. Mario Rincon Nigro.
+## Universidad de Los Andes.
+##
+## This file is part of Genna.
+##
+## Genna is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 2 of the License, or
+## (at your option) any later version.
+##
+## Genna is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with Genna.  If not, see <http://www.gnu.org/licenses/>.
+##
+##======================================================================
+
+##================================================
+## class_def.cpp.tmpl: plantilla para crear archivos
+## de cabecera con una definicion de clase en C++
+##================================================
+
+##================
+## GUARDIA DE COMPILACION
+##================
+#set $_ifndef_directive = '#ifndef ' + $upper($join($class.namespace, '_')) + '_H'
+$_ifndef_directive
+#set $_define_directive = '#define ' + $upper($join($class.namespace, '_')) + '_H'
+$_define_directive
+
+##================
+## DIRECTIVAS INCLUDE
+##================
+
+##================
+## INDICADAS EXPLICITAMENTE
+##================
+#for $_tag in $class.taggedValues:
+    #if $_tag.type == 'header_include':
+        #set $_include_directive = '#include ' + $_tag.dataValue
+        ##/*%_<*/
+        $_include_directive
+        ##/*>_%*/
+    #end if
+#end for
+
+#set $_include_directive = '#include "all_definitions.h"'
+$_include_directive
+
+##================
+## CREADAS POR DEPENDENCIAS
+##================
+#for $_dependency in $class.dependency
+    ## SI NO DEPENDE DE SI MISMA Y LA CLASE DEPENDENCIA NO ES UNA UTILIDAD
+    #if $_dependency != $class.namespace and $_dependency[1]
+        #set $_include_directive = '#include "' + $join($_dependency[0], '/') + '.h"'
+        $_include_directive
+    #end if
+#end for
+
+##=================
+## PARA IMPLEMENTAR LAS MAQUINAS DE ESTADO
+##=================
+#if $class.hasStateMachine
+    #set $_include = '#include "__smbase/StateMachine.h"'
+    $_include
+#end if
+
+##================
+## DIRECTIVAS USING
+##================
+#for $_tag in $class.taggedValues:
+    #if $_tag.type == 'using_directive':
+        ##/*%_<*/
+        using namespace $_tag.dataValue;
+        ##/*>_%*/
+    #end if
+#end for
+
+##================
+## APERTURA DEL ESPACIO DE NOMBRE
+##================
+#for $_name in $class.namespace[:-1]
+    namespace $_name {
+#end for
+
+##================
+## DEFINICION DE CLASE
+##================
+#set global $_class = $class
+#set $_source = $join_path($CPLUSPLUS_TEMPLATES_DIR, 'class_definition.cpp.tmpl')
+#include $_source
+
+##================
+## CIERRE DEL ESPACIO DE NOMBRES
+##================
+#for $_name in $class.namespace[:-1]
+    }
+#end for
+
+#set $_endif_directive = '#endif'
+$_endif_directive

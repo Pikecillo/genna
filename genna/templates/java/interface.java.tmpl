@@ -1,0 +1,97 @@
+##======================================================================
+##
+## Copyright (C) 2007. Mario Rincon Nigro.
+## Universidad de Los Andes.
+##
+## This file is part of Genna.
+##
+## Genna is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 2 of the License, or
+## (at your option) any later version.
+##
+## Genna is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with Genna.  If not, see <http://www.gnu.org/licenses/>.
+##
+##======================================================================
+
+##================================================
+## interface.java.tmpl: plantilla para crear
+## archivos con la definicion de una interfaz en Java
+##================================================
+
+#if $class.namespace[:-1]
+    package $join($class.namespace[:-1], '.');
+#end if
+
+#for $_dependency in $class.dependency
+    ##================
+    ## SI LA DEPENDENCIA ESTA EN OTRO PAQUETE, SE IMPORTA
+    ##================
+    #if $_dependency[0][:-1] != $class.namespace[:-1]
+        import $join($_dependency[0], '.');
+    #end if
+#end for
+
+#set $_modifiers = []
+#if not $class.visibility == 'package'
+    #silent $_modifiers.append('public')
+#end if
+
+#if $class.isLeaf
+    #silent $_modifiers.append('final')
+#end if
+
+#set $_modifiers = $join($_modifiers, ' ')
+#set $_inheritance = ''
+
+#if $class.generalize
+    #set $_inheritance = 'extends ' + $generalize[0]
+#end if
+##================
+## DECLARACION DE INTERFAZ
+##================
+$_modifiers interface $class.name $_inheritance{
+
+#set $_visibilities = ['public', 'package', 'protected', 'private']
+
+#for $_visibility in $_visibilities
+    #for $_operation in $class.operation[$_visibility]
+        #if 'destroy' not in $_operation.stereotype
+            #set $_modifiers = []
+
+            #if not $_operation.visibility == 'package'
+                #silent $_modifiers.append($_operation.visibility)
+            #end if
+
+            #if $_operation.isLeaf
+                #silent $_modifiers.append('final')
+            #end if
+
+            #if $_operation.ownerScope == 'classifier'
+                #silent $_modifiers.append('static')
+            #end if
+
+            #set $_modifiers = $join($_modifiers, ' ')
+            #set $_parameters = []
+
+            #for $_parameter in $_operation.parameter
+                #silent $_parameters.append($_parameter.type + ' ' + $_parameter.name)
+            #end for
+
+            #set $_parameters = $join($_parameters, ', ')
+
+            ##================
+            ## DECLARACION DE OPERACION
+            ##================
+            $_modifiers $_operation.return ${_operation.name}($_parameters);
+            #end if
+    #end for
+#end for
+
+}

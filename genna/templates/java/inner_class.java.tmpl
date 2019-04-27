@@ -1,0 +1,78 @@
+##======================================================================
+##
+## Copyright (C) 2007. Mario Rincon Nigro.
+## Universidad de Los Andes.
+##
+## This file is part of Genna.
+##
+## Genna is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 2 of the License, or
+## (at your option) any later version.
+##
+## Genna is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with Genna.  If not, see <http://www.gnu.org/licenses/>.
+##
+##======================================================================
+
+##================================================
+## inner_class.java.tmpl: plantilla para definir
+## clases anidada en Java
+##================================================
+
+#for $_class in $_inner_classes
+    #set $_modifiers = []
+
+    #if not $_class.visibility == 'package'
+        #silent $_modifiers.append($_class.visibility)
+    #end if
+
+    #if $_class.isAbstract
+        #silent $_modifiers.append('abstract')
+    #else if $_class.isLeaf
+        #silent $_modifiers.append('final')
+    #end if
+
+    #set $_modifiers = $join($_modifiers, ' ')
+    #set $_inheritance = ''
+
+    #if $_class.generalize
+        #set $_inheritance = 'extends ' + $_class.generalize[0]
+    #end if
+
+    #set $_realization = ''
+
+    #if $_class.realize
+        #set $_realization = 'implements ' + $join($realize, ', ') + ' '
+    #end if
+
+    ##================
+    ## DECLARACION DE CLASE
+    ##================
+    $_modifiers class $_class.name $_inheritance $_realization{
+
+    #set $_source = $join_path($JAVA_TEMPLATES_DIR, 'attribute.java.tmpl')
+    #include $_source
+
+    #set global $_all_operations = $_class.operation
+    #set $_source = $join_path($JAVA_TEMPLATES_DIR, 'operation.java.tmpl')
+    #include $_source
+
+    #set global $_inner_classes = $_class.classes
+    #set $_source = $join_path($JAVA_TEMPLATES_DIR, 'inner_class.java.tmpl')
+    #include $_source
+
+    #if $_class.stateMachine
+        #set global $_class = $_class
+        #set global $_state_machine = $_class.stateMachine[0]
+        #set $_source = $join_path($JAVA_TEMPLATES_DIR, 'state_machine.java.tmpl')
+        #include $_source
+    #end if
+
+    }
+#end for

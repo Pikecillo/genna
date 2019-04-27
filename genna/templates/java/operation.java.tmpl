@@ -1,0 +1,118 @@
+##======================================================================
+##
+## Copyright (C) 2007. Mario Rincon Nigro.
+## Universidad de Los Andes.
+##
+## This file is part of Genna.
+##
+## Genna is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 2 of the License, or
+## (at your option) any later version.
+##
+## Genna is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with Genna.  If not, see <http://www.gnu.org/licenses/>.
+##
+##======================================================================
+
+##================================================
+## operation.java.tmpl: plantilla para definir
+## operaciones de clase en Java
+##================================================
+
+#set $_visibilities = ['public', 'package', 'protected', 'private']
+
+#for $_visibility in $_visibilities
+    ##================
+    ## $_all_operations es global y viene de class.java.tmpl o inner_class.java.tmpl
+    ##================
+    #for $_operation in $_all_operations[$_visibility]
+        #if 'destroy' not in $_operation.stereotype
+            #set $_modifiers = []
+            #set global $_operation = $_operation
+
+            #if not $_operation.visibility == 'package'
+                #silent $_modifiers.append($_operation.visibility)
+            #end if
+
+            #if $_operation.isLeaf
+                #silent $_modifiers.append('final')
+            #end if
+
+            #if $_operation.isAbstract
+                #silent $_modifiers.append('abstract')
+            #end if
+
+            #if $_operation.ownerScope == 'classifier'
+                #silent $_modifiers.append('static')
+            #end if
+
+            #set $_modifiers = $join($_modifiers, ' ')
+            #set $_parameters = []
+
+            #for $_parameter in $_operation.parameter
+                #set $_array_status = ''
+                #for $_tag in $_parameter.taggedValues:
+                    #if $_tag.type == 'array_status':
+                         #set $_array_status = $_tag.dataValue
+                         #break
+                    #end if
+                #end for
+                #silent $_parameters.append($join([$_parameter.type, $_array_status, $_parameter.name], ' '))
+            #end for
+
+            #set $_parameters = $join($_parameters, ', ')
+
+            ##================
+            ## SI ES UN CONSTRUCTOR O DESTRUCTOR NO DEVUELVE NADA
+            ##================
+            #if 'create' in $_operation.stereotype
+                #set $_return = ''
+            #else
+                #set $_return = $_operation.return
+            #end if
+
+            ##==================
+            ## PARAMETRO DE DEVOLUCION
+            ##==================
+            #set $_array_status = ''
+            #if $_return
+                #for $_tag in $_return.taggedValues:
+                    #if $_tag.type == 'array_status':
+                        #set $_array_status = $_tag.dataValue
+                        #break
+                    #end if
+                #end for
+                #set $_return = $_return.type
+            #end if
+
+            ##================
+            ## DECLARACION DE OPERACION
+            ##================
+            $_modifiers $_return $_array_status ${_operation.name}($_parameters) {
+
+            #if $_operation.callEvent
+                #for $_callEvent in $_operation.callEvent
+                    __mySM.postEvent(new __smbase.Event(__$_callEvent.name));
+                #end for
+            #else if $_operation.activityGraph
+                #set $_source = $join_path($JAVA_TEMPLATES_DIR, 'activity_graph.java.tmpl')
+                #include $_source
+            #else if $_operation.method
+                ##/*%_<*/
+                $_operation.method
+                ##/*>_%*/
+            #end if
+            #if 'create' in $_operation.stereotype and $_class.stateMachine:
+                __mySM = new ${_class.name}StateMachine(this);
+            #end if
+        }
+        #end if
+
+    #end for
+#end for

@@ -1,0 +1,109 @@
+##======================================================================
+##
+## Copyright (C) 2007. Mario Rincon Nigro.
+## Universidad de Los Andes.
+##
+## This file is part of Genna.
+##
+## Genna is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 2 of the License, or
+## (at your option) any later version.
+##
+## Genna is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with Genna.  If not, see <http://www.gnu.org/licenses/>.
+##
+##======================================================================
+
+##================================================
+## attribute.cpp.tmpl: platilla para declarar los
+## atributos de una clase en C++. Esta plantilla
+## esta incluida en class_definition.cpp.tmpl
+##================================================
+
+#set $_visibilities = ['public', 'package', 'protected', 'private']
+#set $_types = ['short', 'int', 'char', 'bool', 'float', 'double', 'long']
+
+#for $_visibility in $_visibilities
+    #if $_class.attribute[$_visibility]
+
+        ##==============
+        ## VISIBILIDAD
+        ##==============
+        #if $_visibility == 'package'
+            public:
+        #else
+            $_visibility:
+        #end if
+    #end if
+    #for $_attribute in $_class.attribute[$_visibility]
+        ##======================
+        ## MODIFICADORES DE ATRIBUTO
+        ##======================
+        #set $_modifiers = []
+        #if $_attribute.ownerScope == 'classifier'
+            #silent $_modifiers.append('static')
+        #end if
+        #if $_attribute.changeability != 'changeable'
+            #silent $_modifiers.append('const')
+        #end if
+        #set $_modifiers = $join($_modifiers, ' ')
+        ##=========================
+        ## VALOR INICIAL DEL ATRIBUTO
+        ##=========================
+        #set $_initialization = ''
+        #if $_attribute.initialValue and $_attribute.ownerScope == 'classifier' and $_attribute.type in $_types
+            #set $_initialization = ' = ' + $_attribute.initialValue
+        #end if
+        ##=========================
+        ## SI EL ATRIBUTO ES UN ARREGLO SE TOMA SU TAMANO
+        ##=========================
+        #set $_array_size = ''
+        #for $_tag in $_attribute.taggedValues:
+            #if $_tag.type == 'array_size':
+                #set $_array_size = $_tag.dataValue
+                #break
+            #end if
+        #end for
+        ##=========================
+        ## SI EL ATRIBUTO ES UN APUNTADOR O FIN DE ASOCIACION
+        ##=========================
+        #set $_pointer_status = ''
+        #if $_attribute.isAssociation
+            #set $_pointer_status = '*'
+        #else
+            #for $_tag in $_attribute.taggedValues:
+                #if $_tag.type == 'pointer_status':
+                    #set $_pointer_status = $_tag.dataValue
+                    #break
+                #end if
+            #end for
+        #end if
+        ##==========================
+        ## SI EL ATRIBUTO ES UNA REFERENCIA
+        ##==========================
+        #set $_reference_status = ''
+        #if 'reference' in $_attribute.stereotype and $_attribute.multiplicity != '-1'
+            #set $_reference_status = '&'
+        #end if
+        ##===================
+        ## TIPO MODIFICADO
+        ##===================
+        #set $_type = $join([$_attribute.type, $_pointer_status, $_reference_status], ' ')
+        ##==========================
+        ## SI LA MULTIPLICIDAD ES VARIOS EL ATRIBUTO ES UNA COLECCION
+        ##===========================
+        #if $_attribute.multiplicity == '-1'
+            #set $_type = 'std::vector<' + $_type + '>'
+        #end if
+        ##================
+        ## DECLARACION DE ATRIBUTOS
+        ##================
+        $_modifiers $_type $_attribute.name $_array_size $_initialization;
+    #end for
+#end for

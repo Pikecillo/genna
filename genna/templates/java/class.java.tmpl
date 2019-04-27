@@ -1,0 +1,121 @@
+##======================================================================
+##
+## Copyright (C) 2007. Mario Rincon Nigro.
+## Universidad de Los Andes.
+##
+## This file is part of Genna.
+##
+## Genna is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 2 of the License, or
+## (at your option) any later version.
+##
+## Genna is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with Genna.  If not, see <http://www.gnu.org/licenses/>.
+##
+##======================================================================
+
+##======================================================================
+##
+## Copyright (C) 2007. Mario Rincon Nigro.
+## Universidad de Los Andes.
+##
+## This file is part of Genna.
+##
+## Genna is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 2 of the License, or
+## (at your option) any later version.
+##
+## Genna is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with Genna.  If not, see <http://www.gnu.org/licenses/>.
+##
+##======================================================================
+
+##================================================
+## class.java.tmpl: plantilla para crear archivos
+## con la definicion de un clase en Java
+##================================================
+
+#if $class.namespace[:-1]
+    package $join($class.namespace[:-1], '.');
+#end if
+
+#for $_dependency in $class.dependency
+    ##================
+    ## SI LA DEPENDENCIA ESTA EN OTRO PAQUETE, SE IMPORTA
+    ##================
+    #if $_dependency[0][:-1] != $class.namespace[:-1]
+        import $join($_dependency[0], '.');
+    #end if
+#end for
+
+
+#set $_modifiers = []
+
+#if not $class.visibility == 'package'
+    #silent $_modifiers.append('public')
+#end if
+
+#if $class.isAbstract
+    #silent $_modifiers.append('abstract')
+#else if $class.isLeaf
+    #silent $_modifiers.append('final')
+#end if
+
+#set $_modifiers = $join($_modifiers, ' ')
+#set $_inheritance = ''
+
+##================
+## Nota: si existen varias super clases solo se tomara en
+## cuenta la primera. Herencia multiple no permitida en Java
+##================
+#if $class.generalize
+    #set $_inheritance = ' extends ' + $class.generalize[0]
+#end if
+
+#set $_realization = ''
+
+#if $class.realize
+    #set $_realization = ' implements ' + $join($class.realize, ', ')
+#end if
+
+##================
+## DECLARACION DE CLASE
+##================
+$_modifiers class $class.name $_inheritance $_realization {
+
+#set $_source = $join_path($JAVA_TEMPLATES_DIR, 'attribute.java.tmpl')
+#include $_source
+
+#set global $_class = $class
+#set global $_all_operations = $class.operation
+#set $_source = $join_path($JAVA_TEMPLATES_DIR, 'operation.java.tmpl')
+#include $_source
+
+#set global $_inner_classes = $class.classes
+#set $_source = $join_path($JAVA_TEMPLATES_DIR, 'inner_class.java.tmpl')
+#include $_source
+
+##================
+## Nota: si existen varias maquinas de estado en el contexto
+## de esta clase solo se toma en cuenta la primera
+##================
+#if $class.stateMachine
+    #set global $_class = $class
+    #set global $_state_machine = $class.stateMachine[0]
+    #set $_source = $join_path($JAVA_TEMPLATES_DIR, 'state_machine.java.tmpl')
+    #include $_source
+#end if
+
+}

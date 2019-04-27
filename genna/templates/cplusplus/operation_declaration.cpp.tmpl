@@ -1,0 +1,112 @@
+##======================================================================
+##
+## Copyright (C) 2007. Mario Rincon Nigro.
+## Universidad de Los Andes.
+##
+## This file is part of Genna.
+##
+## Genna is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 2 of the License, or
+## (at your option) any later version.
+##
+## Genna is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with Genna.  If not, see <http://www.gnu.org/licenses/>.
+##
+##======================================================================
+
+##=========================
+## Plantilla para declarar operaciones de clase en C++
+##=========================
+#slurp
+##================
+## MODIFICADORES DE OPERACION
+##================
+#set $_modifiers = []
+#if $_operation.ownerScope == 'classifier'
+    #silent $_modifiers.append('static')
+#end if
+#set $_modifiers = $join($_modifiers, ' ')
+#if $_operation.isQuery
+    #set $_queryness = 'const'
+#else
+    #set $_queryness = ''
+#end if
+##================
+## PARAMETROS DE OPERACION
+##================
+#set $_parameters = []
+#for $_param in $_operation.parameter
+     #set $_constness = ''
+     #if 'const' in $_param.stereotype
+         #set $_constness = 'const'
+     #end if
+     #set $_pointer_status = ''
+     #for $_tag in $_param.taggedValues:
+          #if $_tag.type == 'pointer_status':
+              #set $_pointer_status = $_tag.dataValue
+              #break
+          #end if
+     #end for
+     #set $_reference_status = ''
+     #if 'reference' in $_param.stereotype
+         #set $_reference_status = '&'
+     #end if
+     #set $_array_size = ''
+     #for $_tag in $_param.taggedValues:
+          #if $_tag.type == 'array_size':
+              #set $_array_size = $_tag.dataValue
+              #break
+          #end if
+     #end for
+         #silent $_parameters.append($join([$_constness, $_param.type, $_pointer_status, $_reference_status, $_param.name, $_array_size], ' '))
+     #end for
+     #set $_parameters = $join($_parameters, ', ')
+     #set $_abstractness = ''
+     #set $_virtualness = ''
+     #if $_operation.isAbstract
+         #set $_virtualness = 'virtual'
+         #set $_abstractness = ' = 0'
+     #else if 'virtual' in $_operation.stereotype
+         #set $_virtualness = 'virtual'
+     #end if
+     ##================
+     ## SI ES UN CONSTRUCTOR O DESTRUCTOR NO DEVUELVE NADA
+     ##================
+     #if 'create' in $_operation.stereotype or 'destroy' in $_operation.stereotype:
+         #set $_return = ''
+     #else
+         #set $_return = $_operation.return
+     #end if
+     ##=================
+     ## PARA PARAMETRO DE DEVOLUCION
+     ##=================
+     #set $_pointer_status = ''
+     #set $_reference_status = ''
+     #if $_return
+         #for $_tag in $_return.taggedValues:
+             #if $_tag.type == 'pointer_status':
+                 #set $_pointer_status = $_tag.dataValue
+                 #break
+             #end if
+         #end for
+         #if 'reference' in $_return.stereotype
+             #set $_reference_status = '&'
+         #end if
+             #set $_return = $_return.type
+         #end if
+         ##================
+         ## DECLARACION DE OPERACION
+         ##================
+         #if 'create' in $_operation.stereotype
+             ${_class.name}($_parameters);
+         #else if 'destroy' in $_operation.stereotype
+             $_virtualness ~${_class.name}();
+         #else
+             $_virtualness $_modifiers $_return $_pointer_status $_reference_status ${_operation.name} $_queryness ($_parameters) $_abstractness;
+         #end if
