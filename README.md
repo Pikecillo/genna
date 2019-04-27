@@ -23,14 +23,14 @@ are provided within folder `sample_models`.
 
 ## Installation
 
-Run `sudo ./install.sh`
+Run `sudo ./install.sh`. This will install PyXML, 4Suite-XML, and generate a run script `genna.sh` that will execute the generator.
 
 ## Example usage
 
-Run `python genna.py sample_models/Tetris_java.xmi -l java -v -o .`
+Run `./genna.sh sample_models/Tetris_java.xmi -l java -v -o .`
 
 A directory `Tetris` will be created in the current directory. It will contain the source code for the model. Now compile the code, and
-run it
+run it:
 
 ```
 cd Tetris
