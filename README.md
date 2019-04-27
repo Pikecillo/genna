@@ -1,8 +1,9 @@
 Genna is a source code generator for [UML 1.4 models](https://www.omg.org/spec/UML/1.4/About-UML/). Genna is written in
 Python, and uses the Cheetah Template Engine for source code generation. The input format for UML models
 is [XMI 1.2](https://www.omg.org/cgi-bin/doc?formal/02-01-01).
-[ArgoUML](http://argouml.tigris.org/) is recommended for creating onput models, as it supports UML 1.4, and
-models exports in XMI 1.2.
+
+[ArgoUML](http://argouml.tigris.org/) is recommended for creating the input models, as it supports UML 1.4, and
+exports in XMI 1.2.
 
 Genna supports code generation for static structure and dynamic behavior present in UML models. It currently supports
 code generation for class hierarchies, state machines in the context of classes, and activity graphs in the context of
