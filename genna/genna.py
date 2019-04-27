@@ -20,8 +20,8 @@
 ##
 ##======================================================================
 
-import sys
 import string
+import sys
 import time
 import os
 import os.path
@@ -90,27 +90,27 @@ def generate(containerPackage, directory, language):
 
 	    # Create the generation profiles. These are tuples with the names list,
 	    # the template name, and the name of the source code file, respectively.
-            for profile in _languageProfile[language][item]:
-                template = os.path.join(templateDir, profile[0])
+            for (templateFilename, sourceCodeNameFormat) in _languageProfile[language][item]:
+                template = os.path.join(templateDir, templateFilename)
                 filename = os.path.join(packDirectory,
-                                        profile[1] % classifier['name'])
+                                        sourceCodeNameFormat % classifier['name'])
                 generationProfiles.append((search, template, filename))
 
     # For each created profile
-    for profile in generationProfiles:
-
+    for (search, templateFilename, sourceCodeFilename) in generationProfiles:
+        print sourceCodeFilename
         if settings.VERBOSE:
-            print 'Creating source file ', profile[2]
+            print 'Creating source file ', sourceCodeFilename
 
         try:
-            tmpl = Template(searchList=profile[0], file=profile[1])
+            tmpl = Template(searchList=search, file=templateFilename)
             code = Beautifier(str(tmpl)).getCode()
-            output = open(profile[2], 'w')
+            output = open(sourceCodeFilename, 'w')
             output.write(code)
             output.close()
 
-        except Exception, ex:
-            e = exception.SourceFileCreationError(profile[2])
+        except Exception:
+            e = exception.SourceFileCreationError(sourceCodeFilename)
             exception.error_handler(e)
 
     # For each subpackage
@@ -123,8 +123,12 @@ def generate(containerPackage, directory, language):
 # Call the main function
 if __name__ == '__main__':
 
+    # Set default encoding to UTF-8
+    reload(sys)
+    sys.setdefaultencoding('utf8')
+
     try:
-        print '=== Genna v0.1 ==='
+        print '=== Genna v1.0b1 ==='
 
         # Parse the arguments
         args = parse(sys.argv[1:])
