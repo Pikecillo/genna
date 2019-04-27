@@ -67,6 +67,7 @@ typedef char ICHAR;
 /* Round up n to be a multiple of sz, where sz is a power of 2. */
 #define ROUND_UP(n, sz) (((n) + ((sz) - 1)) & ~((sz) - 1))
 
+#if 0
 /* Handle the case where memmove() doesn't exist. */
 #ifndef HAVE_MEMMOVE
 #ifdef HAVE_BCOPY
@@ -75,6 +76,7 @@ typedef char ICHAR;
 #error memmove does not exist on this platform, nor is a substitute available
 #endif /* HAVE_BCOPY */
 #endif /* HAVE_MEMMOVE */
+#endif
 
 #include "internal.h"
 #include "xmltok.h"

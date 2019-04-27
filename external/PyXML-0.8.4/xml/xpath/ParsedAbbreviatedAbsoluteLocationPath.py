@@ -22,10 +22,10 @@ LOOKAHEAD_OPTIMIZERS = {
 class ParsedAbbreviatedAbsoluteLocationPath:
     def __init__(self,rel):
         self._rel = rel
-        nt = ParsedNodeTest.ParsedNodeTest('node', '')
+        pnt = ParsedNodeTest.ParsedNodeTest('node', '')
         ppl = ParsedPredicateList.ParsedPredicateList([])
-        as = ParsedAxisSpecifier.ParsedAxisSpecifier('descendant-or-self')
-        self._step = ParsedStep.ParsedStep(as, nt, ppl)
+        pas = ParsedAxisSpecifier.ParsedAxisSpecifier('descendant-or-self')
+        self._step = ParsedStep.ParsedStep(pas, pnt, ppl)
         return
 
     def evaluate(self, context):

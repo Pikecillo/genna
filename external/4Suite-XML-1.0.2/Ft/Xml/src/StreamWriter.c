@@ -602,7 +602,7 @@ static PyObject *writer_repr(PyStreamWriterObject *self)
 static int writer_print(PyStreamWriterObject *self, FILE *fp, int flags)
 {
   PyObject *repr = writer_repr(self);
-  fprintf(fp, PyString_AS_STRING(repr));
+  fprintf(fp, "%s", PyString_AS_STRING(repr));
   Py_DECREF(repr);
   return 0;
 }
@@ -812,7 +812,7 @@ static PyObject *entitymap_repr(PyEntityMapObject *self)
 static int entitymap_print(PyEntityMapObject *self, FILE *fp, int flags)
 {
   PyObject *repr = entitymap_repr(self);
-  fprintf(fp, PyString_AS_STRING(repr));
+  fprintf(fp, "%s", PyString_AS_STRING(repr));
   Py_DECREF(repr);
   return 0;
 }

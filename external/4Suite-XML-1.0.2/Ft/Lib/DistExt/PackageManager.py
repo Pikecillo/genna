@@ -452,6 +452,7 @@ class PackageManager(Dist.Dist):
                     if os.path.isdir(pathname):
                         pathname = os.path.join(pathname, 'PKG-INFO')
                     if DEBUG: print "  loading", pathname
+		    print pathname
                     yield Dist.DistributionMetadata.from_filename(pathname)
         return
 

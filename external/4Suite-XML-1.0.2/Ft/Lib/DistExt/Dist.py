@@ -653,7 +653,8 @@ class DistributionMetadata(dist.DistributionMetadata):
         if not isinstance(value, list):
             value = [ v.strip() for v in value.split(',') ]
         for v in value:
-            Version.SplitComparison(v)
+	    if v[-1:] != '*':
+                Version.SplitComparison(v)
         self.requires_python = value
 
     def get_requires_external(self):

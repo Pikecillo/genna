@@ -26,10 +26,10 @@ class ParsedAbbreviatedRelativeLocationPath:
         """
         self._left = left
         self._right = right
-        nt = ParsedNodeTest.ParsedNodeTest('node','')
+        pnt = ParsedNodeTest.ParsedNodeTest('node','')
         ppl = ParsedPredicateList.ParsedPredicateList([])
-        as = ParsedAxisSpecifier.ParsedAxisSpecifier('descendant-or-self')
-        self._middle = ParsedStep.ParsedStep(as, nt, ppl)
+        pas = ParsedAxisSpecifier.ParsedAxisSpecifier('descendant-or-self')
+        self._middle = ParsedStep.ParsedStep(pas, pnt, ppl)
 
     def evaluate(self, context):
         res = []
