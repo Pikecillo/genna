@@ -24,11 +24,10 @@ from uml.element import Model, Package, Class, Interface, \
                         Attribute, Operation, AssociationEnd
 from util import ListSet
 
-# Recibe una tabla raiz del modelo UML y construye un diccionario
-# cuyas claves son los xmi.id de los elementos: Model,
-# Package, Class e Interface y los valores son una lista que
-# representa su nombre desde la raiz de la jerarquia de espacios
-# de nombre.
+# Takes a root table of the UML model and builds a dictionary whose
+# keys are the xmi.id of the elements: Model, Package, Class, and Inteface;
+# and whose values are a list representing its name from the the root of
+# the hierarchy of namespaces
 def fullNames(table):
 
     names = {}
@@ -36,53 +35,53 @@ def fullNames(table):
 
     def makeNames(namespace):
 
-        # Se agrega el nombre de este espacio al nombre actual
+	# Appends the name of this space to the current name
         name.append(namespace.get('name'))
 
-        # Se agrega el nombre de este espacio al diccionario
+        # Insert the name of this space into the dictionary
         names[namespace.get('xmi.id')] = name[1:]
 
-        # Si el espacio de nombre es una clase
+        # If the namespace is a Class
         if namespace.__class__ == Class:
-            # Se construye el nombre para cada clase anidada.
+	    # Compute the name for each nested Class
             for innerClass in namespace.get('ownedElement', Class).values():
                 makeNames(innerClass)
 
-        # Si el espacio de nombres es un paquete
+        # If the namespace is a Package
         elif namespace.__class__ in [Model, Package]:
 
-            # Por cada classifier o espacio de nombres en el paquete
+	    # For each classifier or namespace in the package
             for item in [Class, Interface, Model, Package]:
                 for element in namespace.get('ownedElement', item).values():
-                    # Se agrega el nombre completo al diccionario
+		    # Add the full name to the dictionary
                     makeNames(element)
 
-        # Se quita el nombre de este paquete del nombre actual
+	# Pop the name of this Package from the current name
         name.pop()
 
     makeNames(table[table.root_key])
 
     return names
 
-# Recibe la tabla de elementos de un modelo.
-# Devuelve un diccionario con una lista de xmi.id de los extremos de
-# opuestos de asociaciones en las que participa cada classifier.
-# La clave es el xmi.id del classifier y los valores son las listas.
+# Takes the table of elements of a model.
+# Returns a dictionary with a list of xmi.id of the opposite ends
+# of associations of which each classifier can take part.
+# The key is the xmi.if of the classifier and the values are the lists.
 def fullAssociations(table):
 
     associations = {}
 
-    # Se inicializa el diccionario
+    # Initialize the dictionary
     for _id in table.classifiers:
         associations[_id] = ListSet()
 
-    # Por cada asociacion del modelo
+    # For each association of the model
     for _id in table.associations:
-        # Se obtienen los xmi.id de extremos de la asociacion
+	# Get the xmi.id of the opposite ends of the association
         actual_ends_id = table[_id].get('connection', AssociationEnd).keys()
 
-        # Se agregan para cada classifier participante en la asociacion
-        # el resto de fines de asociacion
+	# For each classifier taking part on the association, add the other
+	# ends.
         for index in range(len(actual_ends_id)):
             opposites = actual_ends_id[:index] + actual_ends_id[index + 1:]
             classifier_id = table[actual_ends_id[index]].get('participant')
@@ -90,63 +89,62 @@ def fullAssociations(table):
 
     return associations
 
-# Recibe una tabla de elementos del modelo, un diccionario de espacios de
-# nombre (i.e. el que devuelve fullNames) y un diccionario de fines opuestos
-# de asociacion (i. e. el que devuelve fullAssociations).
-# Devuelve un diccionario con los nombres completos de las dependencias
-# de cada classifier. Para esto se toma en cuenta las dependencias del
-# classifier, los tipos de atributos, los tipos devueltos por operaciones
-# los tipos de sus parametros, las interfaces que realiza, los classifiers
-# que generalice y sus asociaciones.
-# Los valors del diccionario son tuplas (nombre_elemento, debe_generarse)
+# Takes a model element table, a dictionary of namespaces (i.e. returned by
+# fullNames), and a dictionary of opposite association ends (i.e. returned by
+# fullAssociations).
+# Returns a dictionary with the full names of the dependencies of each classifier.
+# The following are taken into account: dependencies of the classifier,
+# attribute types, operation return types and its parameter types, the interfaces
+# it realizes, the classifiers it generalizes, and its associations.
+# The values of the dictionary are tuples (element_name, must_be_generated)
 def fullOwnDependencies(table, namespaces, associations):
 
     dependencies = {}
     notForGeneration = nonGeneratedNamespaces(table)
 
-    # Agrega una dependencia, _id es el xmi.id del elemento
-    # dependiente, dep_id es el xmi.id del elemento dependencia
+    # Add a dependency. _id is the xmi.id of the dependent element,
+    # dep_id is the xmi.id of the dependency element.
     def add(_id, dep_id, generate=True):
         if dep_id in namespaces.keys():
             generated = dep_id not in notForGeneration
             dependencies[_id].append((namespaces[dep_id], generated))
 
-    # Se inicializa el diccionario
+    # Initialize the dictionary
     for _id in table.classifiers:
         dependencies[_id] = ListSet()
 
         _class = table[_id]
 
-        # Dependencias creadas por los atributos
+	# Dependencies created by the attributes
         for attribute in _class.get('feature', Attribute).values():
             add(_id, attribute.get('type'))
 
-        # Dependencias creadas por las operaciones
+	# Dependencies created by the operations
         for operation in _class.get('feature', Operation).values():
             for parameter in operation.get('parameter'):
                 add(_id, parameter.get('type'))
 
-        # Dependencias creadas por las generalizaciones
+	# Dependencies created by the generalizations
         for gen_id in _class.get('generalization'):
             add(_id, table[gen_id].get('parent'))
 
-        # Dependencias creadas por las dependencias (uml.Dependency)
+	# Dependencies created by the dependencies (uml.Dependency)
         for dep_id in _class.get('clientDependency'):
             add(_id, table[dep_id].get('supplier'))
 
-        # Dependencias creadas por las asociaciones
+        # Dependencies created by the associations
         for end_id in associations[_id]:
             if table[end_id].get('isNavigable') == 'true':
                 add(_id, table[end_id].get('participant'))
 
     return dependencies
 
-# Este procedimiento devuelve una lista con los identificadores de todas
-# las clases e interfaces estereotipadas como <<utility>> y todos los
-# paquetes identificados como <<framework>>. Todas las clases contenidas
-# en una clase <<utility>> tambien son clases utility. Los paquetes y clases
-# contenidos en un paquete <<framework>> son <<framwork y <<utility>>
-# respectivamente.
+
+# Return a list with the identifiers of all classes and interfaces stereotyped
+# as <<utility>>, and of all packages stereotyped as <<framework>>. All the
+# classes contained within a <<utility>> class, are also utilities. The
+# packages and classes contained within a package <<framework>> are also
+# frameworks and utilities, respectively.
 def nonGeneratedNamespaces(table):
 
     notForGeneration = []
@@ -170,17 +168,16 @@ def nonGeneratedNamespaces(table):
 
     def identifyNonGenerated(table, namespace):
 
-        # Si el espacio de nombres es una clase y esta etiquetada como
-        # <<utility>> entonces entra en la lista junto a todas las clases
-        # que anide recursivamente
+        # If the namespace is a class and it is labeled as <<utility>> then
+        # it enters the list along with all the classes it nests.
         if namespace.__class__ == Class or namespace.__class__ == Interface:
             for _id in namespace.get('stereotype'):
                 if table[_id].get('name') == 'utility':
                     addNestedNamespacesRecursively(namespace)
 
-        # Si el espacio de nombres es un paquete o modelo y esta etiquetado
-        # como <<framework>> entonces entra en la lista junto a todas las
-        # clases y paquetes que contenga recursivamente
+        # If the namespace is a package or model, and it is stereotyped as
+        # framework then it enters the list along with all classes or packages
+        # it nests.
         if namespace.__class__ == Package or namespace.__class__ == Model:
             for _id in namespace.get('stereotype'):
                 if table[_id].get('name') == 'framework':
